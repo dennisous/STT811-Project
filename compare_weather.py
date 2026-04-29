@@ -45,7 +45,7 @@ def fetch_weather() -> pd.DataFrame:
 
     airports = airportsdata.load("IATA")
     top = (
-        pd.read_parquet(ROOT / "combined_preprocessed.parquet", columns=["ORIGIN"])
+        pd.read_parquet(ROOT / "combined_new.parquet", columns=["ORIGIN"])
         ["ORIGIN"].value_counts().head(80).index.tolist()
     )
 
@@ -107,21 +107,19 @@ def fetch_weather() -> pd.DataFrame:
 
 def build_dataset(with_weather: bool) -> pd.DataFrame:
     label = "WITH WEATHER" if with_weather else "NO WEATHER"
-    print(f"\n[{label}] building dataset from combined_preprocessed.parquet ...")
+    print(f"\n[{label}] building dataset from combined_new.parquet ...")
 
-    df = pd.read_parquet(ROOT / "combined_preprocessed.parquet")
+    df = pd.read_parquet(ROOT / "combined_new.parquet")
     df["FL_DATE"] = pd.to_datetime(df["FL_DATE"])
     df = df.drop_duplicates()
     df = df[df["CANCELLED"] == 0].copy()
     df = df.dropna(subset=["DEP_DELAY"])
 
-    # 5-class target
+    # 3-class target — matches data_preprocess.ipynb
     def bin_delay(m):
-        if m < 15:  return 0
-        if m < 30:  return 1
-        if m < 60:  return 2
-        if m < 120: return 3
-        return 4
+        if m < 15:  return 0   # No delay
+        if m < 91:  return 1   # 15–89 min
+        return 2                # 90+ min
     df["DELAY_CLASS"] = df["DEP_DELAY"].apply(bin_delay)
 
     # State + dep hour
@@ -138,6 +136,22 @@ def build_dataset(with_weather: bool) -> pd.DataFrame:
     df["HAS_PREV_FLIGHT"]   = same_day.astype(int)
     df["PREV_FLIGHT_DELAY"] = df["PREV_FLIGHT_DELAY"].fillna(0)
     df = df.drop(columns=["_PREV_ARR", "_PREV_DATE"])
+
+    # AIRPORT_TRAFFIC — distinct carriers at the origin on this date
+    df["AIRPORT_TRAFFIC"] = df.groupby(
+        ["ORIGIN", "FL_DATE"]
+    )["OP_UNIQUE_CARRIER"].transform("nunique")
+
+    # IS_HOLIDAY — within ±1 day of any US federal holiday
+    from pandas.tseries.holiday import USFederalHolidayCalendar
+    cal = USFederalHolidayCalendar()
+    holidays = pd.to_datetime(list(
+        cal.holidays(start=df["FL_DATE"].min(), end=df["FL_DATE"].max())
+    ))
+    adjacent = set()
+    for d in holidays:
+        adjacent.update([d - pd.Timedelta(days=1), d, d + pd.Timedelta(days=1)])
+    df["IS_HOLIDAY"] = df["FL_DATE"].isin(adjacent).astype(int)
 
     if with_weather:
         wx = fetch_weather().copy()
@@ -241,7 +255,7 @@ def run_main_models(df: pd.DataFrame, label: str) -> dict:
     w_class = len(y_tr) / (len(counts) * counts)
     w_sample = w_class[y_tr.values]
     xgm = xgb.XGBClassifier(
-        objective="multi:softprob", num_class=5, max_depth=5,
+        objective="multi:softprob", num_class=int(y_tr.nunique()), max_depth=5,
         learning_rate=0.2, n_estimators=100, min_child_weight=3,
         subsample=0.8, colsample_bytree=0.8, random_state=SEED,
         n_jobs=-1, tree_method="hist",
