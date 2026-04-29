@@ -1,21 +1,8 @@
-"""
-build_weather_dataset.py — produces combined_preprocessed_weather.parquet,
-which is `combined_preprocessed.parquet` plus 7 weather columns
-(WX_TEMP, WX_RHUM, WX_PRCP, WX_WSPD, WX_PRES, WX_CLDC, WX_CODE).
-
-Reuses build_dataset() from compare_weather.py so the preprocessing matches
-the notebook + the comparison run exactly. Weather is fetched/cached via
-weather_hourly.parquet (will fetch on first run).
-
-Run:
-    /Users/wahidhashem/miniforge3/envs/msds/bin/python build_weather_dataset.py
-"""
-
 from pathlib import Path
 
 from compare_weather import build_dataset
 
-ROOT = Path("/Users/wahidhashem/Desktop/STT811-Project")
+ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "combined_preprocessed_weather.parquet"
 
 

@@ -21,7 +21,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path("/Users/wahidhashem/Desktop/STT811-Project")
+ROOT = Path(__file__).resolve().parent
 WEATHER_CACHE = ROOT / "weather_hourly.parquet"
 
 SEED = 42
@@ -45,7 +45,7 @@ def fetch_weather() -> pd.DataFrame:
 
     airports = airportsdata.load("IATA")
     top = (
-        pd.read_parquet(ROOT / "combined_new.parquet", columns=["ORIGIN"])
+        pd.read_parquet(ROOT / "combined_preprocessed.parquet", columns=["ORIGIN"])
         ["ORIGIN"].value_counts().head(80).index.tolist()
     )
 
@@ -107,9 +107,9 @@ def fetch_weather() -> pd.DataFrame:
 
 def build_dataset(with_weather: bool) -> pd.DataFrame:
     label = "WITH WEATHER" if with_weather else "NO WEATHER"
-    print(f"\n[{label}] building dataset from combined_new.parquet ...")
+    print(f"\n[{label}] building dataset from combined_preprocessed.parquet ...")
 
-    df = pd.read_parquet(ROOT / "combined_new.parquet")
+    df = pd.read_parquet(ROOT / "combined_preprocessed.parquet")
     df["FL_DATE"] = pd.to_datetime(df["FL_DATE"])
     df = df.drop_duplicates()
     df = df[df["CANCELLED"] == 0].copy()
