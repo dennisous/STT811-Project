@@ -21,8 +21,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent
-WEATHER_CACHE = ROOT / "weather_hourly.parquet"
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / "data"
+WEATHER_CACHE = DATA / "weather_hourly.parquet"
 
 SEED = 42
 SAMPLE_SIZE = 500_000
@@ -45,7 +46,7 @@ def fetch_weather() -> pd.DataFrame:
 
     airports = airportsdata.load("IATA")
     top = (
-        pd.read_parquet(ROOT / "combined_new.parquet", columns=["ORIGIN"])
+        pd.read_parquet(DATA / "combined_new.parquet", columns=["ORIGIN"])
         ["ORIGIN"].value_counts().head(80).index.tolist()
     )
 
@@ -109,7 +110,7 @@ def build_dataset(with_weather: bool) -> pd.DataFrame:
     label = "WITH WEATHER" if with_weather else "NO WEATHER"
     print(f"\n[{label}] building dataset from combined_new.parquet ...")
 
-    df = pd.read_parquet(ROOT / "combined_new.parquet")
+    df = pd.read_parquet(DATA / "combined_new.parquet")
     df["FL_DATE"] = pd.to_datetime(df["FL_DATE"])
     df = df.drop_duplicates()
     df = df[df["CANCELLED"] == 0].copy()
@@ -373,7 +374,7 @@ def main():
         print(" VERDICT: SKIP weather — no measurable benefit, not worth the complexity.")
     print("=" * 78)
 
-    out_csv = ROOT / "weather_comparison_results.csv"
+    out_csv = DATA / "weather_comparison_results.csv"
     pd.DataFrame(rows).to_csv(out_csv, index=False)
     print(f" results saved -> {out_csv.name}")
 

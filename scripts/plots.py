@@ -1,8 +1,13 @@
 import os
+from pathlib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.colors import LinearSegmentedColormap
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / "data"
 
 
 plt.rcParams.update(
@@ -23,7 +28,7 @@ plt.rcParams.update(
     }
 )
 
-OUT_DIR = "figures"
+OUT_DIR = ROOT / "figures"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 
@@ -236,7 +241,7 @@ def make_confusion_matrices():
     print(f"Saved {out}")
 
 
-ROC_DATA = "roc_data.npz"
+ROC_DATA = DATA / "roc_data.npz"
 
 ROC_COLORS = {
     "Naive Model":         "#999999",
@@ -254,7 +259,7 @@ def make_roc_curves():
     Requires roc_data.npz with keys: y_test, <ModelName>_proba (one per model).
     Generate it with the notebook snippet in README of this script.
     """
-    if not os.path.exists(ROC_DATA):
+    if not ROC_DATA.exists():
         print(f"Skipping ROC: {ROC_DATA} not found. "
               f"See snippet at the bottom of plots.py to generate it.")
         return

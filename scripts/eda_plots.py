@@ -13,11 +13,16 @@ Run:
 """
 
 import os
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / "data"
 
 
 plt.rcParams.update(
@@ -38,7 +43,7 @@ plt.rcParams.update(
     }
 )
 
-OUT_DIR = "figures"
+OUT_DIR = ROOT / "figures"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 
@@ -181,7 +186,7 @@ def carrier_panel():
         "SECURITY_DELAY",
         "LATE_AIRCRAFT_DELAY",
     ]
-    df = pd.read_parquet("combined_new.parquet", columns=cols)
+    df = pd.read_parquet(DATA / "combined_new.parquet", columns=cols)
     df = df[df["CANCELLED"] != 1].copy()
     names = {
         "AA": "American",
@@ -445,7 +450,7 @@ def main():
         "AIRPORT_TRAFFIC",
         "IS_HOLIDAY",
     ]
-    df = pd.read_parquet("combined_preprocessed.parquet", columns=cols)
+    df = pd.read_parquet(DATA / "combined_preprocessed.parquet", columns=cols)
     print(f"Loaded {len(df):,} rows")
 
     class_distribution(df)

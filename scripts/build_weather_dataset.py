@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from scripts.compare_weather import build_dataset
+from compare_weather import build_dataset
 
-ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "combined_preprocessed_weather.parquet"
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "data" / "combined_preprocessed_weather.parquet"
 
 
 def main():
